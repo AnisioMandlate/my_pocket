@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pocket</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+            background-color: #9f9c9c;
+            color: #000;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        input, select {
+            margin: 5px 0;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .transactions {
+            margin-top: 20px;
+        }
+        .transaction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f4f4f4;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .transaction .desc, .transaction .category {
+            flex: 2;
+        }
+        .transaction .amount {
+            flex: 1;
+            text-align: right;
+        }
+        .transaction .delete {
+            flex: 0.5;
+        }
+        .income {
+            color: green;
+        }
+        .expense {
+            color: red;
+        }
+        .dark-mode {
+            background-color: #302c2c;
+            color: #fff;
+        }
+        .dark-mode .transaction {
+            background: #444;
+        }
+        @media (max-width: 768px) {
+            body {
+                max-width: 100%;
+                padding: 15px;
+            }
+            input, select {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .button-container {
+                flex-direction: column;
+            }
+            button {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .transaction {
+                flex-direction: column;
+                align-items: start;
+                gap: 5px;
+            }
+            .transaction .amount {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>My Pocket</h2>
+       
+    <select id="currency" onchange="updateCurrency()">
+        <option value="$">USD ($)</option>
+        <option value="€">EUR (€)</option>
+        <option value="£">GBP (£)</option>
+        <option value="₹">INR (₹)</option>
+        <option value="MT">MZN (MT)</option>
+        <option value="R">ZAR (R)</option>
+    </select>
+    <input type="text" id="description" placeholder="Description">
+    <input type="number" id="amount" placeholder="Amount">
+    <select id="type">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+    </select>
+    <select id="category">
+        <option value="Food">Food</option>
+        <option value="Transport">Transport</option>
+        <option value="Entertainment">Entertainment</option>
+    </select>
+
+    <div class="button-container">
+        <button onclick="addTransaction()">Add Transaction</button>
+    </div>
+    
+    <h3>Transactions</h3>
+    <div class="transactions" id="transactions"></div>
+    
+    <h3>Total Income: <span id="income" class="income">0</span></h3>
+    <h3>Total Expense: <span id="expense" class="expense">0</span></h3>
+    <h3>Net Income: <span id="net">0</span></h3>
+
+    <script>
+        let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+        let currency = localStorage.getItem("currency") || "$";
+        document.getElementById("currency").value = currency;
+        
+        function addTransaction() {
+            let description = document.getElementById("description").value;
+            let amount = parseFloat(document.getElementById("amount").value);
+            let type = document.getElementById("type").value;
+            let category = document.getElementById("category").value;
+            if (description === "" || isNaN(amount)) {
+                alert("Please enter valid details");
+                return;
+            }
+            if (type === "expense") {
+                amount = -amount;
+            }
+            transactions.push({ description, amount, category, type });
+            localStorage.setItem("transactions", JSON.stringify(transactions));
+            updateUI();
+        }
+        function updateCurrency() {
+            currency = document.getElementById("currency").value;
+            localStorage.setItem("currency", currency);
+            updateUI();
+        }
+        function updateUI() {
+            let transactionsDiv = document.getElementById("transactions");
+            transactionsDiv.innerHTML = "";
+            let income = 0, expense = 0;
+            transactions.forEach((t, index) => {
+                let div = document.createElement("div");
+                div.classList.add("transaction");
+                div.innerHTML = `<span class="desc">${t.description}</span> 
+                                 <span class="category">(${t.category})</span> 
+                                 <span class="amount ${t.type}">${currency}${Math.abs(t.amount)}</span>
+                                 <button class="delete" onclick="removeTransaction(${index})">X</button>`;
+                transactionsDiv.appendChild(div);
+                if (t.amount > 0) income += t.amount;
+                else expense += t.amount;
+            });
+            document.getElementById("income").innerText = currency + income;
+            document.getElementById("expense").innerText = currency + Math.abs(expense);
+            document.getElementById("net").innerText = currency + (income + expense);
+        }
+        function removeTransaction(index) {
+            transactions.splice(index, 1);
+            localStorage.setItem("transactions", JSON.stringify(transactions));
+            updateUI();
+        }
+        function enableDarkMode() {
+            const hour = new Date().getHours();
+            if (hour >= 18 || hour < 6) {
+                document.body.classList.add("dark-mode");
+            }
+        }
+        window.onload = function() {
+            updateUI();
+            enableDarkMode();
+        };
+    </script>
+</body>
+</html>
